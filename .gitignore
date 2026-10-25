@@ -1,0 +1,54 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Model artifacts and datasets
+data/*
+!data/README.md
+!data/.gitkeep
+*.pt
+*.onnx
+*.engine
+*.tflite
+checkpoints/
+runs/
+wandb/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+ios/Pods/
+android/.gradle/
+
+# Node / web dashboard (if applicable)
+node_modules/
+dist/
+.next/
+coverage/
+
+# Local databases / logs
+*.db
+*.sqlite
+*.log
