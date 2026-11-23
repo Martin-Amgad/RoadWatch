@@ -1,22 +1,57 @@
-# API service
+# RoadWatch API (M2)
 
-**Planned stack:** Python + FastAPI.
+FastAPI backend: validation, detection, severity, storage, clustering, staff endpoints.
+Contract: `docs/api/contract.md`. Schema: `docs/architecture/database-schema.md`.
 
-## Responsibilities
-- Validate uploaded images, metadata, and coordinate ranges.
-- Expose documented endpoints for health checks, image analysis, report creation, report listing/filtering, report details, and status updates.
-- Invoke the detection and severity modules.
-- Persist report records and image references.
-- Update geographic cluster assignments when reports arrive.
-- Enforce authorization for staff-only status changes.
-- Return clear errors without leaving partially saved reports.
+## Layout
+| Path | Role |
+| --- | --- |
+| `app/main.py` | App factory. Services are built and the model is warmed up once at startup |
+| `app/routes/` | HTTP layer only: parse, call a service, build the response |
+| `app/services/` | Orchestration: analysis, report creation, status, clustering |
+| `app/ports.py` | Interfaces the services depend on |
+| `app/adapters/` | Real implementations: `ml.py` (M4/M5 modules), `storage.py` (Supabase), `postgres.py` |
+| `app/errors.py` | Error codes, HTTP statuses, handlers |
+| `app/wiring.py` | Production dependency wiring |
 
-## Initial API contract to discuss
-- `GET /health`
-- `POST /analyze` (or agree on a single-call submission design)
-- `POST /reports`
-- `GET /reports`
-- `GET /reports/{report_id}`
-- `PATCH /reports/{report_id}/status`
+## Setup
+From the repository root (the `ml` package must be importable):
+```
+pip install -r services/api/requirements-dev.txt
+cp services/api/.env.example services/api/.env   # fill in values, never commit
+```
+Variables: `DATABASE_URL` (Supabase pooler string), `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET` (private bucket), `STAFF_API_KEY`, `DASHBOARD_ORIGIN`, `MODEL_VERSION` (shown in `/health`).
 
-These are planning suggestions, not implemented endpoints. The team must agree on request/response schemas before integration.
+## Run
+```
+PYTHONPATH=. uvicorn services.api.app.main:create_production_app --factory --host 0.0.0.0 --port 8000
+```
+Interactive docs: `/docs`.
+
+## Test
+```
+pytest
+```
+Tests use in-memory fakes for detection, severity, clustering, storage, and the database. No network.
+
+## Regenerate `openapi.json`
+```
+python -m services.api.app.export_openapi docs/api/openapi.json
+```
+
+## ML module expectations
+All bindings are in `app/adapters/ml.py`. Change only that file if a signature differs.
+| Module | Call | Returns |
+| --- | --- | --- |
+| `ml.damage_detection.detect` | `detect(image_bytes)` | list of `{class_name, confidence, bbox}` |
+| `ml.severity.severity` | `severity(detections, image_width, image_height)` | `{label, score}` |
+| `ml.clustering.cluster` | `cluster(coordinates)`, coordinates are `(latitude, longitude)` pairs | one integer label per pair, negative means unclustered |
+
+`detect` must load its model once (at import or first call). The API calls it once at startup with a blank image to force that load.
+
+## Not verified against live services
+`app/adapters/postgres.py` and `app/adapters/storage.py` are covered only by request-shape tests (storage) or not at all (Postgres). Run the Supabase checklist before relying on them:
+1. Apply the schema, create a private bucket.
+2. `POST /analyze` with a photo: object appears under `pending/`, row in `analyses`.
+3. `POST /reports`: object moves to `reports/`, row in `reports`, analysis row gone.
+4. `GET /reports` with `X-API-Key`: `image_url` opens the photo.
