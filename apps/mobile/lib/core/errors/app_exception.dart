@@ -1,18 +1,28 @@
+/// Base type for every failure the UI needs to distinguish.
+///
+/// Sealed: all subclasses live in this file, so a `switch` over an
+/// [AppException] is exhaustive. Adding a new subclass makes every
+/// switch that misses it a compile error, instead of a runtime surprise.
+///
+/// [message] is for logs and debugging only. The user-facing text is
+/// chosen by the UI layer.
 sealed class AppException implements Exception {
   final String message;
   const AppException(this.message);
+
+  @override
+  String toString() => '$runtimeType: $message';
 }
 
-/// The device is not connected to the internet.
+/// The device has no network connection at all.
 class NoConnectionException extends AppException {
-  const NoConnectionException()
-    : super('No internet connection. Please check your network settings.');
+  const NoConnectionException() : super('No network connection');
 }
 
-/// The request took too long to complete. This can happen if the server is slow or the network is weak.
+/// Connect, send or receive timeout (M-7). Not named TimeoutException,
+/// to avoid clashing with the one in dart:async.
 class RequestTimeoutException extends AppException {
-  const RequestTimeoutException()
-    : super('The request timed out. Please try again later.');
+  const RequestTimeoutException() : super('The request timed out');
 }
 
 /// The server rejected the image: corrupt, unsupported type or too large (M-7).
@@ -25,15 +35,15 @@ class InvalidImageException extends AppException {
     : super('The image was rejected by the server');
 }
 
-// The server returned a non-200 status code, which is not expected for a successful request.
+/// A 5xx or any other unexpected HTTP response.
 class ServerException extends AppException {
-  final int statusCode;
-  const ServerException(this.statusCode)
-    : super('Server error occurred. Status code: $statusCode');
+  final int? statusCode;
+
+  const ServerException({this.statusCode})
+    : super('Unexpected server response');
 }
 
-/// An unexpected error occurred, which is not covered by the other exception types.
-/// This is a catch-all for unanticipated issues.
+/// Anything not classified above, so nothing escapes as a raw crash.
 class UnknownException extends AppException {
-  const UnknownException() : super('An unknown error occurred.');
+  const UnknownException([super.message = 'Unknown error']);
 }
