@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Design tokens from DESIGN.md ("Civic Infrastructure Assurance").
@@ -145,8 +144,9 @@ ThemeData buildAppTheme() {
         elevation: const WidgetStatePropertyAll(0),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) return AppColors.border;
-          if (states.contains(WidgetState.pressed))
+          if (states.contains(WidgetState.pressed)) {
             return AppColors.primaryActive;
+          }
           if (states.contains(WidgetState.hovered)) return AppColors.secondary;
           return AppColors.primary;
         }),

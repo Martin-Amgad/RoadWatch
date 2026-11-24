@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:roadwatch_mobile/app/theme.dart';
 
