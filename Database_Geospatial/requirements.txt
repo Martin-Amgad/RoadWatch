@@ -1,0 +1,5 @@
+psycopg[binary]>=3.2,<4
+python-dotenv>=1,<2
+supabase>=2,<3
+pytest>=8,<10
+Pillow>=11,<13
