@@ -29,6 +29,15 @@ class AppColors {
   static const lowBg = Color(0xFFECFDF5);
 
   static const inverseSurface = Color(0xFF2A303D);
+
+  static const secondaryContainer = Color(0xFFAEEECB);
+  static const onSecondaryContainer = Color(0xFF316E52);
+  static const primaryFixed = Color(0xFFC1ECD4);
+  static const primaryFixedDim = Color(0xFFA5D0B9);
+  static const surfaceContainerLow = Color(0xFFF1F3FF);
+  static const surfaceContainerHigh = Color(0xFFE3E8F9);
+  static const errorContainer = Color(0xFFFFDAD6);
+  static const onErrorContainer = Color(0xFF93000A);
 }
 
 class AppText {
@@ -127,14 +136,14 @@ ThemeData buildAppTheme() {
     scaffoldBackgroundColor: AppColors.background,
     dividerColor: AppColors.border,
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.ink,
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
-      titleTextStyle: text.titleMedium!.copyWith(color: Colors.white),
-      systemOverlayStyle: SystemUiOverlayStyle.light,
+      titleTextStyle: text.titleMedium,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(

@@ -33,4 +33,10 @@ class AppConfig {
 
   /// Photo upload over possibly weak mobile data.
   static const Duration sendTimeout = Duration(seconds: 35);
+
+  /// Shown in the home header. Override with --dart-define=AUTHORITY_NAME=...
+  static const String authorityName = String.fromEnvironment(
+    'AUTHORITY_NAME',
+    defaultValue: 'Municipal Services',
+  );
 }
