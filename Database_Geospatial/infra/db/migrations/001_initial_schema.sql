@@ -1,44 +1,36 @@
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
 
-CREATE TABLE IF NOT EXISTS public.reports (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    image_path TEXT NOT NULL CHECK (image_path <> ''),
-    latitude DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -90 AND 90),
-    longitude DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN -180 AND 180),
-    location extensions.geography(Point, 4326) GENERATED ALWAYS AS (
-        extensions.ST_SetSRID(
-            extensions.ST_MakePoint(longitude, latitude), 4326
-        )::extensions.geography
-    ) STORED,
-    description VARCHAR(1000),
-    category VARCHAR(80),
-    severity VARCHAR(10) NOT NULL DEFAULT 'none'
-        CHECK (severity IN ('none', 'low', 'medium', 'high')),
-    severity_score DOUBLE PRECISION,
-    severity_rank SMALLINT GENERATED ALWAYS AS (
-        CASE severity
-            WHEN 'high' THEN 3
-            WHEN 'medium' THEN 2
-            WHEN 'low' THEN 1
-            ELSE 0
-        END
-    ) STORED,
-    status VARCHAR(20) NOT NULL DEFAULT 'submitted'
-        CHECK (status IN ('submitted', 'under_review', 'resolved')),
-    cluster_label INTEGER,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE IF NOT EXISTS public.analyses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    report_id UUID NOT NULL UNIQUE REFERENCES public.reports(id) ON DELETE CASCADE,
-    detections JSONB NOT NULL DEFAULT '[]'::jsonb
-        CHECK (jsonb_typeof(detections) = 'array'),
-    model_version TEXT NOT NULL DEFAULT 'unknown',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY,
+    created_at      TIMESTAMPTZ      NOT NULL DEFAULT now(),
+    image_path      TEXT             NOT NULL,
+    image_width     INTEGER          NOT NULL CHECK (image_width > 0),
+    image_height    INTEGER          NOT NULL CHECK (image_height > 0),
+    detections      JSONB            NOT NULL DEFAULT '[]'::jsonb,
+    damage_category TEXT,
+    confidence      DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (confidence BETWEEN 0 AND 1),
+    severity_label  TEXT             NOT NULL CHECK (severity_label IN ('Low', 'Medium', 'High', 'None')),
+    severity_score  DOUBLE PRECISION NOT NULL DEFAULT 0
 );
 
-ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS public.reports (
+    id              UUID PRIMARY KEY,
+    created_at      TIMESTAMPTZ                       NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ                       NOT NULL DEFAULT now(),
+    image_path      TEXT                              NOT NULL,
+    location        extensions.geography(Point, 4326) NOT NULL,
+    description     TEXT,
+    damage_category TEXT,
+    confidence      DOUBLE PRECISION                  NOT NULL DEFAULT 0 CHECK (confidence BETWEEN 0 AND 1),
+    detections      JSONB                             NOT NULL DEFAULT '[]'::jsonb,
+    severity_label  TEXT                              NOT NULL CHECK (severity_label IN ('Low', 'Medium', 'High', 'None')),
+    severity_score  DOUBLE PRECISION                  NOT NULL DEFAULT 0,
+    status          TEXT                              NOT NULL DEFAULT 'Submitted'
+                    CHECK (status IN ('Submitted', 'Under Review', 'Resolved')),
+    cluster_id      INTEGER
+);
+
 ALTER TABLE public.analyses ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON TABLE public.reports, public.analyses FROM anon, authenticated;
+ALTER TABLE public.reports  ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.analyses, public.reports FROM anon, authenticated;

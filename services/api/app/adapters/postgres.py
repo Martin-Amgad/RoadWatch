@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from typing import Any
 from uuid import UUID
 
+from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
@@ -21,6 +22,7 @@ from ..domain import (
 )
 
 POOL_MAX_SIZE = 5
+SEARCH_PATH_SQL = "SET search_path TO public, extensions"
 
 LATITUDE_SQL = "ST_Y(location::geometry)"
 LONGITUDE_SQL = "ST_X(location::geometry)"
@@ -50,6 +52,7 @@ class PostgresRepository:
             database_url,
             max_size=POOL_MAX_SIZE,
             kwargs={"row_factory": dict_row, "prepare_threshold": None},
+            configure=_set_search_path,
             open=True,
         )
         return cls(pool)
@@ -190,6 +193,11 @@ class PostgresRepository:
             cursor.executemany(
                 "UPDATE reports SET cluster_id = %s WHERE id = %s", parameters
             )
+
+
+def _set_search_path(connection: Connection) -> None:
+    connection.execute(SEARCH_PATH_SQL)
+    connection.commit()
 
 
 def _build_filters(query: ReportQuery) -> tuple[str, list[Any]]:
